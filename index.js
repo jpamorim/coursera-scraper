@@ -207,7 +207,7 @@ const app = (() => {
             .replace(/\n/g, ' ')
             .replace(/[<>:"/\\|?*\x00-\x1F]| +$/g, '')
             .replace(/^(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])$/, (x) => x + '_');
-        const directory = path.join('.', _cid, 'Week ' + padZero(weekNum), padZero(moduleNum) + ' - ' + moduleName);
+        const directory = path.join('downloads', _cid, 'Week ' + padZero(weekNum), padZero(moduleNum) + ' - ' + moduleName);
         const filePath = path.join(directory, fileName);
 
         // Check if the file already exists before downloading
@@ -251,7 +251,7 @@ const app = (() => {
             .replace(/\n/g, ' ')
             .replace(/[<>:"/\\|?*\x00-\x1F]| +$/g, '')
             .replace(/^(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])$/, (x) => x + '_');
-        const directory = path.join('.', _cid, 'Week ' + padZero(weekNum), padZero(moduleNum) + ' - ' + moduleName);
+        const directory = path.join('downloads', _cid, 'Week ' + padZero(weekNum), padZero(moduleNum) + ' - ' + moduleName);
         const filePath = path.join(directory, fileName);
 
         // Check if the file already exists before downloading
