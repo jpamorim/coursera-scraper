@@ -276,6 +276,64 @@ const app = (() => {
     }
 
     /**
+     * Downloads the subtitle file for the given video object.
+     * @param {int} videoNum The numerical sequence of the video (i.e. 01, 02, 03, ...)
+     * @param {object} video The video object extracted from the response of `onDemandLectureVideos.v1` API
+     * @param {int} moduleNum The numerical sequence of the module (i.e. 01, 02, 03, ...)
+     * @param {object} module The week object extracted from the course details
+     * @param {int} weekNum The numerical sequence of the week (i.e. 01, 02, 03, ...)
+     * @param {object} week The week object extracted from the course details
+     * @param {string} language The language code for the subtitles (e.g. 'pt-BR', 'en')
+     */
+    async function scrapeSubtitles(videoNum, video, moduleNum, module, weekNum, week, language = 'pt-BR') {
+        // Check if subtitles exist for the specified language
+        if (!video.subtitles || !video.subtitles[language]) {
+            log(
+                `      ${chalk.white('Subtitles')} ${chalk.red(
+                    `#${padZero(videoNum)} - No subtitles available for language '${language}'`
+                )}`
+            );
+            return;
+        }
+
+        log(
+            `      ${chalk.white('Subtitles')} ${chalk.yellow(
+                `#${padZero(videoNum)} - Downloading subtitles (${language})`
+            )}`
+        );
+
+        const url = 'https://www.coursera.org/' + video.subtitlesVtt[language];
+        console.log(url);
+        const fileName = `${padZero(videoNum)} - Lecture subtitles (${language}).vtt`;
+        const moduleName = module.name
+            .replace(/\n/g, ' ')
+            .replace(/[<>:"/\\|?*\x00-\x1F]| +$/g, '')
+            .replace(/^(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])$/, (x) => x + '_');
+        const directory = path.join('downloads', _cid, 'Week ' + padZero(weekNum), padZero(moduleNum) + ' - ' + moduleName);
+        const filePath = path.join(directory, fileName);
+
+        // Check if the file already exists before downloading
+        const fileAlreadyExists = fs.existsSync(filePath);
+
+        if (fileAlreadyExists) {
+            if (!_overwrite) {
+                log(
+                    `      ${chalk.white('Subtitles')} ${chalk.red(
+                        `#${padZero(videoNum)} - Skipped '${fileName}' (already exists)`
+                    )}\n`
+                );
+                return;
+            }
+        }
+
+        const downloader = new Downloader({ url, directory, fileName, cloneFiles: false, timeout: 300000 });
+        await downloader.download().catch((err) => {
+            throw err + '\nUnable to download subtitles.\n';
+        });
+        log(`      ${chalk.white('Subtitles')} ${chalk.green(`#${padZero(videoNum)} - Saved '${fileName}'`)}`);
+    }
+
+    /**
      * Scrapes the given module by looping over each of its assets and videos. The function creates a pool
      * of promises to fetch all the assets and videos concurrently.
      * Assets are fetched via `onDemandLectureAssets.v1` API and downloaded via `scrapeAsset()`
@@ -311,6 +369,8 @@ const app = (() => {
                     console.log('      Module does not have any downloadable assets.');
                 } else throw err + '\nUnable to fetch lecture assets.\n';
             });
+        console.log(                `https://www.coursera.org/api/onDemandLectureVideos.v1/${_courseDetails.courseId}~${module.id}?includes=video&fields=onDemandVideos.v1(sources%2Csubtitles%2CsubtitlesVtt%2CsubtitlesTxt)`,
+)
         const lectureVideos = axios
             .get(
                 `https://www.coursera.org/api/onDemandLectureVideos.v1/${_courseDetails.courseId}~${module.id}?includes=video&fields=onDemandVideos.v1(sources%2Csubtitles%2CsubtitlesVtt%2CsubtitlesTxt)`,
@@ -333,8 +393,10 @@ const app = (() => {
         // resModule[1] has the videos
         if (resModule[1]) {
             const video = resModule[1].data.linked['onDemandVideos.v1'][0];
+            console.log(video);
             assetNum += 1;
             promises.push(scrapeVideo(assetNum, video, moduleNum, module, weekNum, week));
+            promises.push(scrapeSubtitles(assetNum, video, moduleNum, module, weekNum, week, 'pt-BR'));
         }
         // resModule[0] has the assets
         if (resModule[0]) {
