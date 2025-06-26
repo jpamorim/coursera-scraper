@@ -303,7 +303,6 @@ const app = (() => {
         );
 
         const url = 'https://www.coursera.org/' + video.subtitlesVtt[language];
-        console.log(url);
         const fileName = `${padZero(videoNum)} - Lecture subtitles (${language}).vtt`;
         const moduleName = module.name
             .replace(/\n/g, ' ')
@@ -393,7 +392,6 @@ const app = (() => {
         // resModule[1] has the videos
         if (resModule[1]) {
             const video = resModule[1].data.linked['onDemandVideos.v1'][0];
-            console.log(video);
             assetNum += 1;
             promises.push(scrapeVideo(assetNum, video, moduleNum, module, weekNum, week));
             promises.push(scrapeSubtitles(assetNum, video, moduleNum, module, weekNum, week, 'pt-BR'));
